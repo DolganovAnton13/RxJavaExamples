@@ -23,28 +23,26 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //Оператор buffer собирает элементы и по мере накопления заданного кол-ва отправляет их дальше одним пакетом.
-        //
-        //Создадим Observable из 8 чисел, и добавим к нему буфер с количеством элементов = 3.
-        Observable<List<Integer>> observable = Observable
-                .from(new Integer[]{1, 2, 3, 4, 5, 6, 7, 8})
-                .buffer(3);
+        //Оператор merge объединит элементы из двух Observable в один Observable
+        Observable<Integer> observable = Observable
+                .from(new Integer[]{1,2,3})
+                .mergeWith(Observable.from(new Integer[]{6,7,8,9}));
 
 // create observer
-        Observer<List<Integer>> observer = new Observer<List<Integer>>() {
+        Observer<Integer> observer = new Observer<Integer>() {
             @Override
             public void onCompleted() {
-                Log.i("TAG", "onCompleted");
+                Log.i("tag", "onCompleted");
             }
 
             @Override
             public void onError(Throwable e) {
-                Log.i("TAG", "onError: " + e);
+                Log.i("tag", "onError: " + e);
             }
 
             @Override
-            public void onNext(List<Integer> s) {
-                Log.i("TAG", "onNext: " + s);
+            public void onNext(Integer s) {
+                Log.i("tag", "onNext: " + s);
             }
         };
 
