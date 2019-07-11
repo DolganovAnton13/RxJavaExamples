@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
@@ -22,41 +23,35 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //Оператор map преобразует все элементы последовательности.
-        // Для этого нам необходимо написать функцию преобразования.
-        // Например конвертация из String в Integer.
-        
-        Observable<Integer> observable = Observable
-                .from(new String[]{"1", "2", "3", "4", "5", "6"})
-                .map(stringToInteger);
+        //Оператор buffer собирает элементы и по мере накопления заданного кол-ва отправляет их дальше одним пакетом.
+        //
+        //Создадим Observable из 8 чисел, и добавим к нему буфер с количеством элементов = 3.
+        Observable<List<Integer>> observable = Observable
+                .from(new Integer[]{1, 2, 3, 4, 5, 6, 7, 8})
+                .buffer(3);
 
-
-        Observer<Integer> observer = new Observer<Integer>() {
+// create observer
+        Observer<List<Integer>> observer = new Observer<List<Integer>>() {
             @Override
             public void onCompleted() {
-                Log.i("tag", "onCompleted");
+                Log.i("TAG", "onCompleted");
             }
 
             @Override
             public void onError(Throwable e) {
-                Log.i("tag", "onError: " + e);
+                Log.i("TAG", "onError: " + e);
             }
 
             @Override
-            public void onNext(Integer s) {
-                Log.i("tag", "onNext: " + s);
+            public void onNext(List<Integer> s) {
+                Log.i("TAG", "onNext: " + s);
             }
         };
 
-
+// subscribe
         observable.subscribe(observer);
     }
 
-    Func1<String, Integer> stringToInteger = new Func1<String, Integer>() {
-        @Override
-        public Integer call(String s) {
-            return Integer.parseInt(s);
-        }
-    };
+
 }
 
