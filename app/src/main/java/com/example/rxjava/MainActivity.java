@@ -5,8 +5,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
+
 import rx.Observable;
 import rx.Observer;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action1;
+import rx.schedulers.Schedulers;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -15,25 +21,43 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        Observable<String> observable = Observable.from(new String[]{"one", "two", "three"});
+        //Если у вас есть синхронный метод, который вам надо сделать асинхронным, то оператор fromCallable поможет вам
+        Observable.fromCallable(new CallableLongAction("5"))
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Action1<Integer>() {
+                    @Override
+                    public void call(Integer integer) {
+                        Log.i("Tag","onNext " + integer);
+                    }
+                });
+    }
 
-        Observer<String> observer = new Observer<String>() {
-            @Override
-            public void onNext(String s) {
-                Log.i("log","onNext: " + s);
-            }
 
-            @Override
-            public void onError(Throwable e) {
-                Log.i("log","onError: " + e);
-            }
+}
 
-            @Override
-            public void onCompleted() {
-                Log.i("log","onCompleted");
-            }
-        };
+class CallableLongAction implements Callable<Integer> {
 
-        observable.subscribe(observer);
+    private final String data;
+
+    public CallableLongAction(String data) {
+        this.data = data;
+    }
+
+    @Override
+    public Integer call() throws Exception {
+        return longAction(data);
+    }
+
+    private int longAction(String text) {
+        Log.d("Tag","longAction");
+
+        try {
+            TimeUnit.SECONDS.sleep(1);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        return Integer.parseInt(text);
     }
 }
