@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 
 import rx.Observable;
 import rx.Observer;
+import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.functions.Func1;
@@ -23,10 +24,30 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //Оператор merge объединит элементы из двух Observable в один Observable
-        Observable<Integer> observable = Observable
-                .from(new Integer[]{1,2,3})
-                .mergeWith(Observable.from(new Integer[]{6,7,8,9}));
+        //Давайте создадим свой Observable.
+        //Для этого необходимо написать реализацию интерфейса OnSubscribe и передать ее в метод Observable.create.
+        //Создадим Observable, который будет похож на оператор interval.
+        // Он будет посылать числа от 0 до 9 с интервалом в одну секунду.
+
+        // create onSubscribe
+        Observable.OnSubscribe<Integer> onSubscribe = new Observable.OnSubscribe<Integer>() {
+            @Override
+            public void call(Subscriber<? super Integer> subscriber) {
+                for (int i = 0; i < 10; i++) {
+                    try {
+                        TimeUnit.SECONDS.sleep(1);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    subscriber.onNext(i);
+                }
+                subscriber.onCompleted();
+            }
+        };
+
+// create observable
+        Observable<Integer> observable = Observable.create(onSubscribe)
+                .subscribeOn(Schedulers.io());
 
 // create observer
         Observer<Integer> observer = new Observer<Integer>() {
@@ -41,8 +62,8 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onNext(Integer s) {
-                Log.i("tag", "onNext: " + s);
+            public void onNext(Integer i) {
+                Log.i("tag", "onNext: " + i);
             }
         };
 
