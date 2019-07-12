@@ -28,48 +28,35 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //Мы можем настроить Observable так, чтобы метод call
-        // был выполнен в другом потоке. Для этого используется оператор subscribeOn,
-        // в который нам необходимо передать Scheduler.
-        final Observer<Integer> observer = new Observer<Integer>() {
+        //Этот оператор аналогичен оператору onErrorReturn,
+        // но позволяет вместо ошибки отправить в Observer не одно значение, а несколько - в виде Observable.
+        Observable<String> stringData = Observable.just("1", "2", "a", "4", "5");
+
+        Observable<Long> observable = stringData
+                .map(new Func1<String, Long>() {
+                    @Override
+                    public Long call(String s) {
+                        return Long.parseLong(s);
+                    }
+                })
+                .onErrorResumeNext(Observable.just(8L, 9L, 10L));
+
+        observable.subscribe(new Observer<Long>() {
             @Override
             public void onCompleted() {
-                Log.i("TAG","observer onCompleted");
+                Log.i("TAG","onCompleted");
             }
 
             @Override
-            public void onError(Throwable e) {}
+            public void onError(Throwable e) {
+                Log.i("TAG","onError " + e);
+            }
 
             @Override
-            public void onNext(Integer vaule) {
-                Log.i("TAG","observer onNext value = " + vaule);
+            public void onNext(Long aLong) {
+                Log.i("TAG","onNext " + aLong);
             }
-        };
-
-        Observable.OnSubscribe onSubscribe = new Observable.OnSubscribe<Integer>() {
-            @Override
-            public void call(Subscriber<? super Integer> subscriber) {
-                Log.i("TAG","call");
-                for (int i = 0; i < 3; i++) {
-                    try {
-                        TimeUnit.MILLISECONDS.sleep(100);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    subscriber.onNext(i);
-                }
-                subscriber.onCompleted();
-            }
-        };
-
-        Observable<Integer> observable = Observable
-                .create(onSubscribe)
-                .subscribeOn(Schedulers.io());
-
-        Log.i("TAG","subscribe");
-        observable.subscribe(observer);
-
-        Log.i("TAG","done");
+        });
 
     }
 
