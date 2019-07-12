@@ -28,54 +28,48 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //Самый обычный Subject, без каких-либо опций. Принимает данные и отдает их всем текущим подписчикам.
-        final Observer<Long> observer1 = new Observer<Long>() {
+        //Мы можем настроить Observable так, чтобы метод call
+        // был выполнен в другом потоке. Для этого используется оператор subscribeOn,
+        // в который нам необходимо передать Scheduler.
+        final Observer<Integer> observer = new Observer<Integer>() {
             @Override
             public void onCompleted() {
-                Log.i("TAG","observer1 onCompleted");
+                Log.i("TAG","observer onCompleted");
             }
 
             @Override
             public void onError(Throwable e) {}
 
             @Override
-            public void onNext(Long aLong) {
-                Log.i("TAG","observer1 onNext value = " + aLong);
+            public void onNext(Integer vaule) {
+                Log.i("TAG","observer onNext value = " + vaule);
             }
         };
 
-        final Observer<Long> observer2 = new Observer<Long>() {
+        Observable.OnSubscribe onSubscribe = new Observable.OnSubscribe<Integer>() {
             @Override
-            public void onCompleted() {
-                Log.i("TAG","observer2 onCompleted");
-            }
-
-            @Override
-            public void onError(Throwable e) {}
-
-            @Override
-            public void onNext(Long aLong) {
-                Log.i("TAG","observer2 onNext value = " + aLong);
+            public void call(Subscriber<? super Integer> subscriber) {
+                Log.i("TAG","call");
+                for (int i = 0; i < 3; i++) {
+                    try {
+                        TimeUnit.MILLISECONDS.sleep(100);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                    subscriber.onNext(i);
+                }
+                subscriber.onCompleted();
             }
         };
 
-        final Observable<Long> observable = Observable
-                .interval(1, TimeUnit.SECONDS)
-                .take(10);
+        Observable<Integer> observable = Observable
+                .create(onSubscribe)
+                .subscribeOn(Schedulers.io());
 
-        final PublishSubject<Long> subject = PublishSubject.create();
+        Log.i("TAG","subscribe");
+        observable.subscribe(observer);
 
-        Log.i("TAG","subject subscribe");
-        observable.subscribe(subject);
-
-
-        Log.i("TAG","observer1 subscribe");
-        subject.subscribe(observer1);
-
-        Log.i("TAG","observer2 subscribe");
-        subject.subscribe(observer2);
-
-        subject.onNext(100L);
+        Log.i("TAG","done");
 
     }
 
