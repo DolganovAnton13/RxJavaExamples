@@ -3,6 +3,7 @@ package com.example.rxjava;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 
 import java.util.List;
@@ -15,7 +16,10 @@ import rx.Subscriber;
 import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.functions.Func1;
+import rx.observables.ConnectableObservable;
 import rx.schedulers.Schedulers;
+import rx.subjects.PublishSubject;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -24,51 +28,55 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        //Давайте создадим свой Observable.
-        //Для этого необходимо написать реализацию интерфейса OnSubscribe и передать ее в метод Observable.create.
-        //Создадим Observable, который будет похож на оператор interval.
-        // Он будет посылать числа от 0 до 9 с интервалом в одну секунду.
-
-        // create onSubscribe
-        Observable.OnSubscribe<Integer> onSubscribe = new Observable.OnSubscribe<Integer>() {
-            @Override
-            public void call(Subscriber<? super Integer> subscriber) {
-                for (int i = 0; i < 10; i++) {
-                    try {
-                        TimeUnit.SECONDS.sleep(1);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                    subscriber.onNext(i);
-                }
-                subscriber.onCompleted();
-            }
-        };
-
-// create observable
-        Observable<Integer> observable = Observable.create(onSubscribe)
-                .subscribeOn(Schedulers.io());
-
-// create observer
-        Observer<Integer> observer = new Observer<Integer>() {
+        //Самый обычный Subject, без каких-либо опций. Принимает данные и отдает их всем текущим подписчикам.
+        final Observer<Long> observer1 = new Observer<Long>() {
             @Override
             public void onCompleted() {
-                Log.i("tag", "onCompleted");
+                Log.i("TAG","observer1 onCompleted");
             }
 
             @Override
-            public void onError(Throwable e) {
-                Log.i("tag", "onError: " + e);
-            }
+            public void onError(Throwable e) {}
 
             @Override
-            public void onNext(Integer i) {
-                Log.i("tag", "onNext: " + i);
+            public void onNext(Long aLong) {
+                Log.i("TAG","observer1 onNext value = " + aLong);
             }
         };
 
-// subscribe
-        observable.subscribe(observer);
+        final Observer<Long> observer2 = new Observer<Long>() {
+            @Override
+            public void onCompleted() {
+                Log.i("TAG","observer2 onCompleted");
+            }
+
+            @Override
+            public void onError(Throwable e) {}
+
+            @Override
+            public void onNext(Long aLong) {
+                Log.i("TAG","observer2 onNext value = " + aLong);
+            }
+        };
+
+        final Observable<Long> observable = Observable
+                .interval(1, TimeUnit.SECONDS)
+                .take(10);
+
+        final PublishSubject<Long> subject = PublishSubject.create();
+
+        Log.i("TAG","subject subscribe");
+        observable.subscribe(subject);
+
+
+        Log.i("TAG","observer1 subscribe");
+        subject.subscribe(observer1);
+
+        Log.i("TAG","observer2 subscribe");
+        subject.subscribe(observer2);
+
+        subject.onNext(100L);
+
     }
 
 
